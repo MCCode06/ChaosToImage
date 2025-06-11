@@ -6,6 +6,17 @@
     <Window.Resources>
         <viewmodels:DoubleToDiameterConverter x:Key="DoubleToDiameterConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Sparkle animation (not implemented) -->
+        <Storyboard x:Key="SparkleAnimation" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                     From="1" To="0.3" Duration="0:0:1.2"/>
+            <DoubleAnimation Storyboard.TargetProperty="Width"
+                     From="6" To="9" Duration="0:0:1.2"/>
+            <DoubleAnimation Storyboard.TargetProperty="Height"
+                     From="6" To="9" Duration="0:0:1.2"/>
+        </Storyboard>
+
     </Window.Resources>
     <Grid>
         <Canvas x:Name="BallCanvas" Background="Black" Width="300" Height="300" HorizontalAlignment="Center" VerticalAlignment="Top">

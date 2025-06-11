@@ -267,6 +267,8 @@ public class SimulationViewModel : INotifyPropertyChanged
                             continue;
 
                         double impulse = -(1.0 + 1.0) * velAlongNormal / 2;
+                        // impulse = -(1 + e) * (relativeVelocity • normal) / (1/massA + 1/massB) 
+                        // considering kinetic energy is conserved (e = 1.0) and the masses are assumed to be 1 
                         impulseVector = impulse * normal;
 
                         a.Velocity -= impulseVector;
