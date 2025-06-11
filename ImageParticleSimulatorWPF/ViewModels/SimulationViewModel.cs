@@ -38,6 +38,21 @@ public class SimulationViewModel : INotifyPropertyChanged
     private bool _isRecordingPhase = true;
     private readonly List<BallData> _recordedData = new();
 
+    private bool _isOverlayVisible = true;
+    public bool IsOverlayVisible
+    {
+        get => _isOverlayVisible;
+        set
+        {
+            if (_isOverlayVisible != value)
+            {
+                _isOverlayVisible = value;
+                OnPropertyChanged(nameof(IsOverlayVisible));
+            }
+        }
+    }
+    public Action? OnOverlayFadeRequest;
+
     public SimulationViewModel(double width, double height, int ballCount, BitmapImage image)
     {
         _width = width;
@@ -117,7 +132,7 @@ public class SimulationViewModel : INotifyPropertyChanged
             Position = _center,
             Velocity = velocity,
             FiredVelocity = velocity,
-            Radius = 8,
+            Radius = 5,
             Color = Colors.White
         });
     }
@@ -162,6 +177,8 @@ public class SimulationViewModel : INotifyPropertyChanged
 
     private void PrepareReplay()
     {
+        IsOverlayVisible = false;
+        OnOverlayFadeRequest?.Invoke();
         _isRecordingPhase = false;
         _ballsFired = 0;
         _stopTimerStarted = false;
@@ -179,7 +196,7 @@ public class SimulationViewModel : INotifyPropertyChanged
             {
                 Position = _center,
                 Velocity = data.InitialVelocity,
-                Radius = 8,
+                Radius = 5,
                 Color = data.Color
             });
 

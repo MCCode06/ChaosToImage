@@ -6,14 +6,99 @@
              xmlns:local="clr-namespace:ImageParticleSimulatorWPF.Views"
              xmlns:viewmodels="clr-namespace:ImageParticleSimulatorWPF.ViewModels"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#1e1e1e">
     <UserControl.Resources>
         <viewmodels:NullToBoolConverter x:Key="NullToBoolConverter"/>
+
+        <!-- Button Style -->
+        <Style TargetType="Button" x:Key="FancyButton">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#3b82f6"/>
+            <Setter Property="Padding" Value="10 5"/>
+            <Setter Property="Margin" Value="0 5"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" Color="Black" Opacity="0.4"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563eb"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#1d4ed8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
-        <Button Content="Upload Image" Command="{Binding UploadImageCommand}" Width="150" Margin="0 0 0 10"/>
-        <Image Source="{Binding UploadedImage}" Width="300" Height="300" Stretch="Uniform"/>
-        <Button Content="Start Simulation" Command="{Binding StartSimulationCommand}" Width="150" Margin="0 10 0 0" 
-                IsEnabled="{Binding UploadedImage, Converter={StaticResource NullToBoolConverter}}"/>
-    </StackPanel>
+    
+    <!-- Fade-in animation -->
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                 From="0" To="1" Duration="0:0:0.5"/>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <Grid>
+        <Border Width="400"
+                Background="#2d2d2d"
+                Padding="30"
+                CornerRadius="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="12"
+                          ShadowDepth="4"
+                          Opacity="0.4"
+                          Color="Black"/>
+            </Border.Effect>
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="🎇 Image Particle Simulator"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           Margin="0 0 0 10"
+                           TextAlignment="Center"/>
+                <TextBlock Text="Upload an image and watch it come to life out of pure Chaos!"
+                           FontSize="12"
+                           Foreground="LightGray"
+                           Margin="0 0 0 20"
+                           TextAlignment="Center"/>
+
+                <Button Content="Upload Image"
+                        Command="{Binding UploadImageCommand}"
+                        Style="{StaticResource FancyButton}"
+                        Width="200"/>
+                <Image Source="{Binding UploadedImage}"
+                       Width="200"
+                       Height="200"
+                       Stretch="Uniform"
+                       Margin="0 10"/>
+                <Button Content="Start Simulation"
+                        Command="{Binding StartSimulationCommand}"
+                        Style="{StaticResource FancyButton}"
+                        IsEnabled="{Binding UploadedImage, Converter={StaticResource NullToBoolConverter}}"
+                        Width="200"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>
