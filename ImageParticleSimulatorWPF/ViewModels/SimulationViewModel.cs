@@ -13,46 +13,47 @@ public class BallData
 {
     public Vector InitialVelocity { get; set; }
     public Color Color { get; set; }
-    public Point FinalPosition {  get; set; }
+    public Point FinalPosition { get; set; }
 }
 
 public class SimulationViewModel : INotifyPropertyChanged
 {
     public ObservableCollection<Ball> Balls { get; } = new ObservableCollection<Ball>();
 
-    private DispatcherTimer _timer;
-    private Random _rand = new();
-
-    private DispatcherTimer _stopTimer;
+    private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer _stopTimer;
     private bool _stopTimerStarted = false;
 
-    private double _width;
-    private double _height;
-    private BitmapImage _image;
+    private readonly Random _rand = new();
+    private readonly Point _center;
+
+    private readonly double _width;
+    private readonly double _height;
+    private readonly BitmapImage _image;
 
     private int _totalBallsToFire;
     private int _ballsFired;
     private int _spawnTickCounter = 1;
 
     private bool _isRecordingPhase = true;
-    private List<BallData> _recordedData = new();
-
+    private readonly List<BallData> _recordedData = new();
 
     public SimulationViewModel(double width, double height, int ballCount, BitmapImage image)
     {
         _width = width;
         _height = height;
         _image = image;
+        _center = new Point(width / 2, height / 2);
 
         _totalBallsToFire = ballCount;
         _ballsFired = 0;
 
-        _timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += Tick;
         _timer.Start();
+
+        _stopTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _stopTimer.Tick += StopTimerTick;
     }
 
     private void Tick(object? sender, EventArgs e)
@@ -66,31 +67,11 @@ public class SimulationViewModel : INotifyPropertyChanged
             }
 
             _spawnTickCounter++;
-
             UpdateBalls();
 
             if (_ballsFired >= _totalBallsToFire && !_stopTimerStarted)
             {
                 _stopTimerStarted = true;
-
-                _stopTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(5)
-                };
-                _stopTimer.Tick += (s, args) =>
-                {
-                    _stopTimer.Stop();
-
-                    if (_isRecordingPhase)
-                    {
-                        AssignColorsFromImage();
-                        PrepareReplay();
-                    }
-                    else
-                    {
-                        _timer.Stop();
-                    }
-                };
                 _stopTimer.Start();
             }
         }
@@ -102,37 +83,38 @@ public class SimulationViewModel : INotifyPropertyChanged
             if (_ballsFired >= _recordedData.Count && !_stopTimerStarted)
             {
                 _stopTimerStarted = true;
-
-                _stopTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(5)
-                };
-                _stopTimer.Tick += (s, args) =>
-                {
-                    _stopTimer.Stop();
-                    _timer.Stop(); 
-                };
                 _stopTimer.Start();
             }
         }
     }
 
+    private void StopTimerTick(object? sender, EventArgs e)
+    {
+        _stopTimer.Stop();
+
+        if (_isRecordingPhase)
+        {
+            AssignColorsFromImage();
+            PrepareReplay();
+        }
+        else
+        {
+            _timer.Stop();
+        }
+    }
 
     private void FireNewBall()
     {
-        Point center = new Point(_width / 2, _height / 2);
         double angle = _rand.NextDouble() * 2 * Math.PI;
 
         double progress = (double)_ballsFired / _totalBallsToFire;
-        double baseSpeed = 18.0;
-        double minSpeed = 2.0;
-        double speed = baseSpeed * (1.0 - progress) + minSpeed * progress;
+        double speed = 18.0 * (1.0 - progress) + 2.0 * progress;
 
         Vector velocity = new Vector(Math.Cos(angle), Math.Sin(angle)) * speed;
 
         Balls.Add(new Ball
         {
-            Position = center,
+            Position = _center,
             Velocity = velocity,
             FiredVelocity = velocity,
             Radius = 8,
@@ -178,7 +160,6 @@ public class SimulationViewModel : INotifyPropertyChanged
         }
     }
 
-
     private void PrepareReplay()
     {
         _isRecordingPhase = false;
@@ -196,7 +177,7 @@ public class SimulationViewModel : INotifyPropertyChanged
 
             Balls.Add(new Ball
             {
-                Position = new Point(_width / 2, _height / 2),
+                Position = _center,
                 Velocity = data.InitialVelocity,
                 Radius = 8,
                 Color = data.Color
@@ -238,6 +219,8 @@ public class SimulationViewModel : INotifyPropertyChanged
             }
         }
 
+        Vector delta, normal, relativeVelocity, impulseVector;
+
         int passes = 3;
         for (int pass = 0; pass < passes; pass++)
         {
@@ -248,31 +231,26 @@ public class SimulationViewModel : INotifyPropertyChanged
                     var a = Balls[i];
                     var b = Balls[j];
 
-                    Vector delta = b.Position - a.Position;
+                    delta = b.Position - a.Position;
                     double distance = delta.Length;
                     double minDistance = a.Radius + b.Radius;
 
                     if (distance < minDistance && distance > 0.0001)
                     {
-                        Vector normal = delta / distance;
-                        double overlap = (minDistance - distance);
+                        normal = delta / distance;
+                        double overlap = minDistance - distance;
 
-                        // Push balls apart
                         a.Position -= normal * (overlap / 2);
                         b.Position += normal * (overlap / 2);
 
-                        // Elastic velocity exchange (1D on collision axis)
-                        Vector relativeVelocity = b.Velocity - a.Velocity;
+                        relativeVelocity = b.Velocity - a.Velocity;
                         double velAlongNormal = Vector.Multiply(relativeVelocity, normal);
 
                         if (velAlongNormal > 0)
                             continue;
 
-                        double restitution = 1.0; // perfectly elastic
-
-                        double impulse = -(1 + restitution) * velAlongNormal / 2;
-
-                        Vector impulseVector = impulse * normal;
+                        double impulse = -(1.0 + 1.0) * velAlongNormal / 2;
+                        impulseVector = impulse * normal;
 
                         a.Velocity -= impulseVector;
                         b.Velocity += impulseVector;
@@ -280,8 +258,6 @@ public class SimulationViewModel : INotifyPropertyChanged
                 }
             }
         }
-
-        OnPropertyChanged(nameof(Balls));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
